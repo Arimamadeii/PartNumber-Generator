@@ -15,8 +15,11 @@
         <img src="https://www.farrindo.co.id/wp-content/uploads/2025/01/300x39-logofarrindo2025bawahbanget.webp" alt="Farrindo Logo" width="150" height="20">
     </div>
 
+    <!-- Unit Converter Toggle Button -->
+    <button id="converterToggle" class="converter-toggle">Unit Converter</button>
+
     <!-- Unit Converter -->
-    <div class="unit-converter">
+    <div class="unit-converter" id="unitConverter" style="display: none;">
         <h3>Unit Converter</h3>
         <div class="converter-group">
             <label>Value to Convert</label>
@@ -196,33 +199,65 @@
             </div>
             
             <!-- Cartridge Dimensions Section -->
-            <div class="section cartridge-dimensions" id="cartridgeDimensions">
+            <div class="section cartridge-dimensions" id="cartridgeDimensions" style="display: none;">
                 <div class="section-title">Dimensi Cartridge (mm)</div>
                 <div class="form-group">
                     <div class="cartridge-dimension-group">
                         <div class="cartridge-dimension-input">
-                            <label for="internalTop">Internal Dimension Top</label>
-                            <input type="number" id="internalTop" min="0">
+                            <label for="topOuter">Top Outer Ø (mm)</label>
+                            <input type="number" id="topOuter" min="0">
                         </div>
                         <div class="cartridge-dimension-input">
-                            <label for="internalBottom">Internal Dimension Bottom</label>
-                            <input type="number" id="internalBottom" min="0">
-                        </div>
-                    </div>
-                    <div class="cartridge-dimension-group">
-                        <div class="cartridge-dimension-input">
-                            <label for="externalTop">External Dimension Top</label>
-                            <input type="number" id="externalTop" min="0">
-                        </div>
-                        <div class="cartridge-dimension-input">
-                            <label for="externalBottom">External Dimension Bottom</label>
-                            <input type="number" id="externalBottom" min="0">
+                            <label for="topInner">Top Inner Ø (mm)</label>
+                            <input type="text" id="topInner">
+                            <span class="info-icon" title="Jika Salah satu ring plate memang tidak ada diameter dalam maka isi saja dengan tanda strip -">i</span>
                         </div>
                     </div>
                     <div class="cartridge-dimension-group">
                         <div class="cartridge-dimension-input">
-                            <label for="cartridgeLength">Length (Top to Bottom)</label>
-                            <input type="number" id="cartridgeLength" min="0">
+                            <label for="bottomOuter">Bottom Outer Ø (mm)</label>
+                            <input type="number" id="bottomOuter" min="0">
+                        </div>
+                        <div class="cartridge-dimension-input">
+                            <label for="bottomInner">Bottom Inner Ø (mm)</label>
+                            <input type="text" id="bottomInner">
+                            <span class="info-icon" title="Jika Salah satu ring plate memang tidak ada diameter dalam maka isi saja dengan tanda strip -">i</span>
+                        </div>
+                    </div>
+                    <div class="cartridge-dimension-group">
+                        <div class="cartridge-dimension-input">
+                            <label for="cartridgeHeight">Tinggi (mm)</label>
+                            <input type="number" id="cartridgeHeight" min="0">
+                        </div>
+                    </div>
+                    <div class="cartridge-dimension-group">
+                        <div class="cartridge-dimension-input">
+                            <label for="expanded">Expanded</label>
+                            <select id="expanded">
+                                <option value="single expanded">Single Expanded</option>
+                                <option value="double expanded">Double Expanded</option>
+                                <option value="no expanded">No Expanded</option>
+                            </select>
+                        </div>
+                        <div class="cartridge-dimension-input">
+                            <label for="gasket">Gasket</label>
+                            <select id="gasket">
+                                <option value="top gasket">Top Gasket</option>
+                                <option value="bottom gasket">Bottom Gasket</option>
+                                <option value="top bottom gasket">Top Bottom Gasket</option>
+                                <option value="no gasket">No Gasket</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="cartridge-dimension-group">
+                        <div class="cartridge-dimension-input">
+                            <label for="ringPlateType">Type Ring Plate</label>
+                            <select id="ringPlateType">
+                                <option value="open top, open bottom">Open Top, Open Bottom</option>
+                                <option value="closed top, open bottom">Closed Top, Open Bottom</option>
+                                <option value="closed top, closed bottom">Closed Top, Closed Bottom</option>
+                                <option value="open top, closed bottom">Open Top, Closed Bottom</option>
+                            </select>
                         </div>
                     </div>
                     <button class="generate-size-btn" onclick="generateSizeCode()">Generate Size Code</button>
