@@ -1,9 +1,8 @@
-// Import Supabase client (pastikan instal @supabase/supabase-js)
 import { createClient } from '@supabase/supabase-js';
 
 // === Konfigurasi Supabase ===
 const supabaseUrl = "https://ojskxzgbmgwspmswyony.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qc2t4emdibWd3c3Btc3d5b255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTk5OTk5OTksImV4cCI6MjAwMDAwMDAwMH0.ABCDEF123456"; // GANTI DENGAN ANON KEY LENGKAP ANDA!
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qc2t4emdibWd3c3Btc3d5b255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5Nzc1NDcsImV4cCI6MjA3MjU1MzU0N30.glFY56Wkw-zwTb63reXMl1bifc6QYKLM543Rljt2LH8"; // GANTI DENGAN ANON KEY LENGKAP ANDA!
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // === Clock ===
@@ -24,8 +23,8 @@ function validateLogin() {
   if (username === "Farrindo" && password === "Farrindo365") {
     document.getElementById("loginModal").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
-    loadData(); // Load data setelah login
-    loadMasterData(); // Load data master dari Supabase
+    loadData();
+    loadMasterData();
   } else {
     document.getElementById("loginError").style.display = "block";
   }
@@ -36,7 +35,7 @@ function validateLogin() {
 async function loadMasterData() {
   try {
     // Load Kategori
-    const { data: categories, error: catError } = await supabase.from("master_kategori").select("kode, nama, prefix");
+    const { data: categories, error: catError } = await supabase.from("master_kategori").select("id, kode, nama, prefix");
     if (catError) throw catError;
     const categorySelect = document.getElementById("category");
     categorySelect.innerHTML = '<option value="">-- Pilih Kategori --</option>';
@@ -46,6 +45,7 @@ async function loadMasterData() {
       opt.textContent = `${cat.kode}. ${cat.nama}`;
       opt.dataset.prefix = cat.prefix;
       opt.dataset.nama = cat.nama;
+      opt.dataset.id = cat.id;
       categorySelect.appendChild(opt);
     });
   } catch (error) {
@@ -54,78 +54,82 @@ async function loadMasterData() {
   }
 }
 
-// === Dropdown Logic (Update untuk fetch dari Supabase) ===
+// === Dropdown Logic ===
 async function updateSubCategories() {
-  const category = document.getElementById("category").value;
+  const categorySelect = document.getElementById("category");
+  const categoryId = categorySelect.options[categorySelect.selectedIndex]?.dataset.id;
   const subSelect = document.getElementById("subCategory");
   subSelect.innerHTML = '<option value="">-- Pilih Sub Kategori --</option>';
-  if (category) {
+  if (categoryId) {
     try {
       const { data: subs, error } = await supabase
         .from("master_subkategori")
-        .select("kode, nama")
-        .eq("kategori_id", category); // Asumsi kategori_id adalah foreign key (sesuaikan dengan skema Anda)
+        .select("id, kode, nama")
+        .eq("kategori_id", categoryId);
       if (error) throw error;
       subs.forEach(sc => {
         const opt = document.createElement("option");
         opt.value = sc.kode;
         opt.textContent = `${sc.kode}. ${sc.nama}`;
         opt.dataset.nama = sc.nama;
+        opt.dataset.id = sc.id;
         subSelect.appendChild(opt);
       });
       subSelect.disabled = false;
     } catch (error) {
       console.error("Error fetching subcategories:", error);
     }
+  } else {
+    subSelect.disabled = true;
   }
 }
 
 async function updateProductNames() {
-  const subCategory = document.getElementById("subCategory").value;
+  const subCategorySelect = document.getElementById("subCategory");
+  const subCategoryId = subCategorySelect.options[subCategorySelect.selectedIndex]?.dataset.id;
   const prodSelect = document.getElementById("productName");
   prodSelect.innerHTML = '<option value="">-- Pilih Nama Product --</option>';
-  if (subCategory) {
+  if (subCategoryId) {
     try {
       const { data: products, error } = await supabase
         .from("master_produk")
-        .select("kode, nama")
-        .eq("subkategori_id", subCategory); // Asumsi subkategori_id foreign key
+        .select("id, kode, nama")
+        .eq("subkategori_id", subCategoryId);
       if (error) throw error;
       products.forEach(p => {
         const opt = document.createElement("option");
         opt.value = p.kode;
         opt.textContent = `${p.kode}. ${p.nama}`;
         opt.dataset.nama = p.nama;
+        opt.dataset.id = p.id;
         prodSelect.appendChild(opt);
       });
       prodSelect.disabled = false;
     } catch (error) {
       console.error("Error fetching products:", error);
     }
+  } else {
+    prodSelect.disabled = true;
   }
 }
 
 async function updateMaterialOptions() {
-  const subCategory = document.getElementById("subCategory").value;
   const materialSelect = document.getElementById("material");
   materialSelect.innerHTML = '<option value="">-- Pilih Bahan/Media --</option>';
-  if (subCategory) {
-    try {
-      // Asumsi ada table master_produk_media untuk mapping, atau langsung dari master_media
-      // Di sini kita fetch semua media, tapi bisa filter berdasarkan sub/produk jika ada mapping
-      const { data: media, error } = await supabase.from("master_media").select("kode, nama");
-      if (error) throw error;
-      media.forEach(m => {
-        const opt = document.createElement("option");
-        opt.value = m.kode;
-        opt.textContent = `${m.kode}. ${m.nama}`;
-        opt.dataset.nama = m.nama;
-        materialSelect.appendChild(opt);
-      });
-      materialSelect.disabled = false;
-    } catch (error) {
-      console.error("Error fetching materials:", error);
-    }
+  try {
+    const { data: media, error } = await supabase.from("master_media").select("id, kode, nama");
+    if (error) throw error;
+    media.forEach(m => {
+      const opt = document.createElement("option");
+      opt.value = m.kode;
+      opt.textContent = `${m.kode}. ${m.nama}`;
+      opt.dataset.nama = m.nama;
+      opt.dataset.id = m.id;
+      materialSelect.appendChild(opt);
+    });
+    materialSelect.disabled = false;
+  } catch (error) {
+    console.error("Error fetching materials:", error);
   }
 }
 
@@ -135,27 +139,31 @@ function generateSizeCode() {
   const w = document.getElementById("width").value;
   const h = document.getElementById("height").value;
   if (l && w && h) {
+    if (l <= 0 || w <= 0 || h <= 0) {
+      alert("Panjang, lebar, dan tinggi harus lebih dari 0!");
+      return;
+    }
     document.getElementById("sizeCode").value = `${l}x${w}x${h}`;
+  } else {
+    alert("Lengkapi panjang, lebar, dan tinggi!");
   }
 }
 
 // === Fungsi untuk Mendapatkan Unique Size Code per Product ===
 async function getUniqueSizeCode(productKode, sizeStr) {
   try {
-    // Check jika size sudah ada untuk product ini
     const { data: existing, error: checkError } = await supabase
-      .from("product_sizes") // Asumsi table baru: product_sizes
+      .from("product_sizes")
       .select("code")
       .eq("product_kode", productKode)
       .eq("size", sizeStr)
       .single();
-    if (checkError && checkError.code !== 'PGRST116') throw checkError; // Ignore no rows error
+    if (checkError && checkError.code !== 'PGRST116') throw checkError;
 
     if (existing) {
       return existing.code;
     }
 
-    // Dapatkan max code untuk product ini
     const { data: maxCodeData, error: maxError } = await supabase
       .from("product_sizes")
       .select("code")
@@ -167,13 +175,12 @@ async function getUniqueSizeCode(productKode, sizeStr) {
     let maxCodeNum = 0;
     if (maxCodeData && maxCodeData.length > 0) {
       const maxCode = maxCodeData[0].code;
-      maxCodeNum = parseInt(maxCode.substring(1), 10); // Ambil angka setelah 'A'
+      maxCodeNum = parseInt(maxCode.substring(1), 10);
     }
 
     const newCodeNum = maxCodeNum + 1;
-    const newCode = `A${newCodeNum.toString().padStart(3, '0')}`; // A001, A002, dll.
+    const newCode = `A${newCodeNum.toString().padStart(3, '0')}`;
 
-    // Insert baru
     const { error: insertError } = await supabase
       .from("product_sizes")
       .insert([{ product_kode: productKode, size: sizeStr, code: newCode }]);
@@ -194,11 +201,11 @@ async function generatePartNumber() {
   const productSelect = document.getElementById("productName");
   const materialSelect = document.getElementById("material");
 
-  const category = categorySelect.value; // kode: '01'
-  const subCategory = subCategorySelect.value; // '01'
-  const product = productSelect.value; // '01'
-  const material = materialSelect.value; // '01'
-  const size = document.getElementById("sizeCode").value; // '123x123x123'
+  const category = categorySelect.value;
+  const subCategory = subCategorySelect.value;
+  const product = productSelect.value;
+  const material = materialSelect.value;
+  const size = document.getElementById("sizeCode").value;
   const price = document.getElementById("price").value;
 
   if (!category || !subCategory || !product || !material || !size) {
@@ -206,30 +213,34 @@ async function generatePartNumber() {
     return;
   }
 
-  // Ambil prefix dan nama dari selected option
-  const prefix = categorySelect.options[categorySelect.selectedIndex].dataset.prefix; // 'F1'
-  const catNama = categorySelect.options[categorySelect.selectedIndex].dataset.nama; // 'Filter'
-  const subNama = subCategorySelect.options[subCategorySelect.selectedIndex].dataset.nama; // 'Pre Filter'
-  const prodNama = productSelect.options[productSelect.selectedIndex].dataset.nama; // 'NAF CR Pre Filter Washable Pleated Radial'
-  const matNama = materialSelect.options[materialSelect.selectedIndex].dataset.nama; // 'G3 White Fabric'
+  if (!/^\d+(\.\d{3})?$/.test(price)) {
+    alert("Harga harus dalam format angka, misal: 123412 atau 123.412");
+    return;
+  }
 
-  // Dapatkan unique size code
+  const prefix = categorySelect.options[categorySelect.selectedIndex].dataset.prefix;
+  const catNama = categorySelect.options[categorySelect.selectedIndex].dataset.nama;
+  const subNama = subCategorySelect.options[subCategorySelect.selectedIndex].dataset.nama;
+  const prodNama = productSelect.options[productSelect.selectedIndex].dataset.nama;
+  const matNama = materialSelect.options[materialSelect.selectedIndex].dataset.nama;
+
   const sizeCode = await getUniqueSizeCode(product, size);
   if (!sizeCode) return;
 
-  // Generate part number: F101-0101-A001
   const partNumber = `${prefix}${category}-${subCategory}${product}-${material}-${sizeCode}`;
-
   document.getElementById("partNumber").value = partNumber;
   document.getElementById("result").style.display = "block";
 
-  // QR Code content
-  const qrContent = `Category: ${catNama}Sub Category: ${subCategory}. ${subNama}Product: ${prodNama}Material: ${matNama}Dimensions: ${size}mmPrice: Rp ${price}`;
+  const formattedPrice = `Rp ${parseInt(price).toLocaleString('id-ID')}`;
+  const qrContent = `Category: ${catNama}\nSub Category: ${subCategory}. ${subNama}\nProduct: ${prodNama}\nMaterial: ${matNama}\nDimensions: ${size}mm\nPrice: ${formattedPrice}`;
 
   document.getElementById("qr-code").innerHTML = "";
-  new QRCode(document.getElementById("qr-code"), qrContent);
+  new QRCode(document.getElementById("qr-code"), {
+    text: qrContent,
+    width: 200,
+    height: 200
+  });
 
-  // Simpan ke Supabase (part_numbers)
   try {
     const { error } = await supabase.from("part_numbers").insert([{
       part_number: partNumber,
@@ -238,11 +249,11 @@ async function generatePartNumber() {
       product,
       material,
       size,
-      price,
-      details: { qr_content: qrContent } // Simpan QR content jika perlu
+      price: formattedPrice,
+      details: { qr_content: qrContent }
     }]);
     if (error) throw error;
-    loadData(); // Refresh table
+    loadData();
   } catch (error) {
     console.error("Insert error:", error);
     alert("Gagal menyimpan ke Supabase: " + error.message);
@@ -267,7 +278,7 @@ async function loadData() {
         <td>${row.material}</td>
         <td>${row.size}</td>
         <td>${row.price || ""}</td>
-        <td>${new Date(row.created_at).toLocaleString()}</td>
+        <td>${new Date(row.created_at).toLocaleString('id-ID')}</td>
       `;
       tbody.appendChild(tr);
     });
@@ -293,3 +304,15 @@ function saveQRCode(type) {
     link.click();
   });
 }
+
+// === Event Listeners ===
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById("category").addEventListener("change", updateSubCategories);
+  document.getElementById("subCategory").addEventListener("change", updateProductNames);
+  document.getElementById("productName").addEventListener("change", updateMaterialOptions);
+  document.getElementById("generateSizeCode").addEventListener("click", generateSizeCode);
+  document.getElementById("generatePartNumber").addEventListener("click", generatePartNumber);
+  document.getElementById("copyBtn").addEventListener("click", () => copyToClipboard("partNumber"));
+  document.getElementById("savePng").addEventListener("click", () => saveQRCode("png"));
+  document.getElementById("saveJpeg").addEventListener("click", () => saveQRCode("jpeg"));
+});
