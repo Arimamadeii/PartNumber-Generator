@@ -5,63 +5,50 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Part Number Generator</title>
   <link rel="stylesheet" href="styles.css">
-
-  <!-- Library eksternal -->
-  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
-  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 <body>
-  <!-- Farrindo Logo -->
-  <div class="farrindo-logo">
-    <img src="https://www.farrindo.co.id/wp-content/uploads/2025/01/300x39-logofarrindo2025bawahbanget.webp" 
-         alt="Farrindo Logo" width="150" height="20">
-  </div>
-
-  <!-- Jakarta Clock -->
-  <div class="jakarta-clock">
-    <div>Jakarta, Indonesia</div>
-    <div class="clock-time" id="jakarta-time"></div>
-    <div class="clock-date" id="jakarta-date"></div>
-  </div>
-
-  <!-- Login Modal -->
-  <div id="loginModal" class="login-modal">
-    <div class="login-content">
-      <h2>Login Required</h2>
-      <form class="login-form" onsubmit="return validateLogin()">
-        <input type="text" id="username" placeholder="Username" required>
-        <input type="password" id="password" placeholder="Password" required>
-        <button type="submit">Login</button>
-      </form>
-      <div id="loginError" class="error-message">Invalid username or password</div>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>Jakarta, Indonesia</h1>
+      <div id="jakarta-time"></div>
+      <div id="jakarta-date"></div>
     </div>
-  </div>
 
-  <!-- Main Content -->
-  <div id="mainContent" style="display: none;">
-    <div class="container">
-      <div class="header">
-        <h1>System Part Number Generator</h1>
-      </div>
+    <!-- Login Modal -->
+    <div id="loginModal" class="section">
+      <h2 class="section-title">Login Required</h2>
+      <form onsubmit="return validateLogin()">
+        <div class="form-group">
+          <label for="username">Username:</label>
+          <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password:</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit">Login</button>
+        <p id="loginError" style="display: none; color: red;">Invalid username or password</p>
+      </form>
+    </div>
 
-      <!-- Kategori Section -->
+    <!-- Main Content -->
+    <div id="mainContent" style="display: none;">
       <div class="section">
-        <div class="section-title">Kategori</div>
+        <h2 class="section-title">System Part Number Generator</h2>
+
+        <!-- Kategori Section -->
         <div class="form-group">
           <label for="category">Kategori</label>
           <select id="category" onchange="updateSubCategories()">
             <option value="">-- Pilih Kategori --</option>
-            <option value="01">01. Filter</option>
-            <option value="02">02. Sheetmetal</option>
-            <option value="03">03. Bahan baku</option>
-            <option value="04">04. Barang jadi</option>
-            <option value="05">05. Jasa</option>
-            <option value="06">06. Subcount</option>
           </select>
         </div>
 
+        <!-- Sub Kategori Section -->
         <div class="form-group">
           <label for="subCategory">Sub Kategori</label>
           <select id="subCategory" onchange="updateProductNames()" disabled>
@@ -69,100 +56,87 @@
           </select>
         </div>
 
-        <div class="form-group" id="productNameGroup">
-          <label for="productName" id="productNameLabel">Nama Product</label>
+        <!-- Nama Product Section -->
+        <div class="form-group">
+          <label for="productName">Nama Product</label>
           <select id="productName" onchange="updateMaterialOptions()" disabled>
             <option value="">-- Pilih Nama Product --</option>
           </select>
         </div>
 
-        <div class="form-group" id="materialGroup">
+        <!-- Bahan/Media Section -->
+        <div class="form-group">
           <label for="material">Bahan/Media Utama</label>
           <select id="material" disabled>
             <option value="">-- Pilih Bahan/Media --</option>
           </select>
         </div>
-      </div>
 
-      <!-- Ukuran -->
-      <div class="section">
-        <div class="section-title">Ukuran (mm)</div>
-        <div class="dimensions">
-          <div class="dimension-input">
-            <label for="length">Panjang</label>
-            <input type="number" id="length" min="0">
-          </div>
-          <div class="dimension-input">
-            <label for="width">Lebar</label>
-            <input type="number" id="width" min="0">
-          </div>
-          <div class="dimension-input">
-            <label for="height">Tinggi</label>
-            <input type="number" id="height" min="0">
-          </div>
-        </div>
-        <button class="generate-size-btn" onclick="generateSizeCode()">Generate Size Code</button>
+        <!-- Ukuran Section -->
         <div class="form-group">
-          <label for="sizeCode">Kode Ukuran</label>
-          <input type="text" id="sizeCode" readonly>
+          <label>Ukuran (mm)</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="number" id="length" placeholder="Panjang" min="1">
+            <input type="number" id="width" placeholder="Lebar" min="1">
+            <input type="number" id="height" placeholder="Tinggi" min="1">
+          </div>
+          <button id="generateSizeCode" style="margin-top: 10px;">Generate Size Code</button>
+          <div class="form-group">
+            <label for="sizeCode">Kode Ukuran</label>
+            <input type="text" id="sizeCode" readonly>
+          </div>
         </div>
-      </div>
 
-      <!-- Harga -->
-      <div class="form-group">
-        <label for="price">Harga Rp.</label>
-        <input type="number" id="price" min="0">
-      </div>
-
-      <!-- Generate -->
-      <div class="generate-section">
-        <button onclick="generatePartNumber()">Generate Part Number</button>
-      </div>
-
-      <!-- Hasil -->
-      <div class="result" id="result" style="display: none;">
+        <!-- Harga Section -->
         <div class="form-group">
-          <label for="partNumber">Part Number</label>
-          <div class="flex-row">
-            <input type="text" id="partNumber" readonly style="flex: 1;">
-            <button class="copy-btn" onclick="copyToClipboard('partNumber')">Copy</button>
-          </div>
+          <label for="price">Harga Rp.</label>
+          <input type="text" id="price" placeholder="Contoh: 123412 atau 123.412">
         </div>
-        <div class="qr-container">
-          <div id="qr-code"></div>
-          <div class="save-buttons">
-            <button class="save-btn" onclick="saveQRCode('png')">Save as PNG</button>
-            <button class="save-btn" onclick="saveQRCode('jpeg')">Save as JPEG</button>
-          </div>
-        </div>
-      </div>
 
-      <!-- Data Table -->
-      <div class="section data-section">
-        <div class="section-title">Data Part Number</div>
-        <div class="table-container">
-          <table class="data-table" id="dataTable">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Part Number</th>
-                <th>Kategori</th>
-                <th>Sub</th>
-                <th>Product</th>
-                <th>Material</th>
-                <th>Size</th>
-                <th>Harga</th>
-                <th>Created</th>
-              </tr>
-            </thead>
-            <tbody id="dataBody"></tbody>
-          </table>
+        <!-- Generate Part Number -->
+        <button id="generatePartNumber">Generate Part Number</button>
+
+        <!-- Result Section -->
+        <div id="result" class="result" style="display: none;">
+          <div class="form-group">
+            <label for="partNumber">Part Number</label>
+            <input type="text" id="partNumber" readonly>
+            <button id="copyBtn" class="copy-btn">Copy</button>
+          </div>
+          <div class="qr-container">
+            <div id="qr-code"></div>
+            <div style="margin-top: 10px;">
+              <button id="savePng">Save as PNG</button>
+              <button id="saveJpeg">Save as JPEG</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="section">
+          <h2 class="section-title">Data Part Number</h2>
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Part Number</th>
+                  <th>Kategori</th>
+                  <th>Sub</th>
+                  <th>Product</th>
+                  <th>Material</th>
+                  <th>Size</th>
+                  <th>Harga</th>
+                  <th>Created</th>
+                </tr>
+              </thead>
+              <tbody id="dataBody"></tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
   </div>
-
-  <!-- Script -->
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>
