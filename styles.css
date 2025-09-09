@@ -135,6 +135,11 @@ button:disabled {
   z-index: 10;
 }
 
+#loginError, #signUpError {
+  margin-top: 10px;
+  font-weight: bold;
+}
+
 @media (max-width: 600px) {
   .container {
     margin: 10px;
@@ -143,10 +148,4 @@ button:disabled {
     width: 100%;
     margin-top: 10px;
   }
-}
-
-/* Tambahan untuk debug login error */
-#loginError {
-  margin-top: 10px;
-  font-weight: bold;
 }
