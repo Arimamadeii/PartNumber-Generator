@@ -2,6 +2,7 @@ body {
   font-family: Arial, sans-serif;
   margin: 20px;
   padding-top: 40px;
+  background-color: #f4f4f4;
 }
 
 .container {
@@ -12,9 +13,13 @@ body {
   gap: 20px;
 }
 
-.header h1 {
+.header {
   text-align: center;
+}
+
+.header h1 {
   color: #2c3e50;
+  margin-bottom: 10px;
 }
 
 .section {
@@ -22,12 +27,14 @@ body {
   padding: 15px;
   border-radius: 5px;
   background: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .section-title {
   font-weight: bold;
   margin-bottom: 10px;
   font-size: 18px;
+  color: #2c3e50;
 }
 
 .form-group {
@@ -38,6 +45,7 @@ label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: #34495e;
 }
 
 select, input {
@@ -46,6 +54,12 @@ select, input {
   border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
+  font-size: 14px;
+}
+
+select:disabled, input:disabled {
+  background-color: #f0f0f0;
+  cursor: not-allowed;
 }
 
 button {
@@ -57,8 +71,14 @@ button {
   cursor: pointer;
   font-size: 14px;
 }
-button:hover {
+
+button:hover:not(:disabled) {
   background-color: #45a049;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .result {
@@ -73,6 +93,7 @@ button:hover {
   background-color: #3498db;
   margin-left: 10px;
 }
+
 .copy-btn:hover {
   background-color: #2980b9;
 }
@@ -106,8 +127,20 @@ button:hover {
   padding: 8px;
   text-align: left;
 }
+
 .data-table th {
   background-color: #f2f2f2;
   position: sticky;
   top: 0;
+  z-index: 10;
+}
+
+@media (max-width: 600px) {
+  .container {
+    margin: 10px;
+  }
+  button {
+    width: 100%;
+    margin-top: 10px;
+  }
 }
