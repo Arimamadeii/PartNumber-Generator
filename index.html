@@ -1,153 +1,314 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Part Number Generator</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Part Number Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.4.4/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.supabase.com/js/v2/supabase_js.js"></script> <!-- Supabase client -->
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <div class="header">
-      <h1>Jakarta, Indonesia</h1>
-      <div id="jakarta-time"></div>
-      <div id="jakarta-date"></div>
+    <!-- Unit Converter Toggle -->
+    <button class="converter-toggle" onclick="toggleConverter()">Unit Converter</button>
+
+    <!-- Unit Converter -->
+    <div class="unit-converter" id="unitConverter" style="display: none;">
+        <h3>Unit Converter</h3>
+        <div class="converter-group">
+            <div class="converter-input">
+                <input type="number" id="convertValue" placeholder="Enter value" oninput="convertUnits()">
+                <select id="fromUnit" onchange="convertUnits()">
+                    <option value="mm">mm</option>
+                    <option value="cm">cm</option>
+                    <option value="inch">inch</option>
+                </select>
+            </div>
+            <input type="text" id="toMm" readonly>
+            <input type="text" id="toCm" readonly>
+            <input type="text" id="toInch" readonly>
+        </div>
+    </div>
+
+    <!-- Jakarta Clock -->
+    <div class="jakarta-clock">
+        <div class="clock-time" id="jakarta-time"></div>
+        <div class="clock-date" id="jakarta-date"></div>
     </div>
 
     <!-- Login Modal -->
-    <div id="loginModal" class="section">
-      <h2 class="section-title">Login</h2>
-      <form id="loginForm" onsubmit="return validateLogin()">
-        <div class="form-group">
-          <label for="loginEmail">Email:</label>
-          <input type="email" id="loginEmail" required>
+    <div class="login-modal" id="loginModal">
+        <div class="login-content">
+            <h2>Login Required</h2>
+            <form class="login-form">
+                <input type="email" id="username" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button type="button" onclick="handleLogin()">Login</button>
+            </form>
+            <div class="error-message">Invalid username or password</div>
         </div>
-        <div class="form-group">
-          <label for="loginPassword">Password:</label>
-          <input type="password" id="loginPassword" required>
-        </div>
-        <button type="submit">Login</button>
-        <p id="loginError" style="display: none; color: red;">Invalid email or password</p>
-      </form>
-      <p>Belum punya akun? <a href="#" onclick="showSignUp()">Daftar</a></p>
     </div>
 
-    <!-- Sign-Up Modal -->
-    <div id="signUpModal" class="section" style="display: none;">
-      <h2 class="section-title">Sign Up</h2>
-      <form id="signUpForm" onsubmit="return signUp()">
-        <div class="form-group">
-          <label for="signUpEmail">Email:</label>
-          <input type="email" id="signUpEmail" required>
+    <!-- Add Option Modal -->
+    <div class="add-option-modal" id="addOptionModal">
+        <div class="add-option-content">
+            <h2>Add New Option</h2>
+            <form class="add-option-form">
+                <label>Category</label>
+                <select id="addCategory">
+                    <option value="">-- Select Category --</option>
+                    <option value="01">01. Filter</option>
+                    <option value="02">02. Sheetmetal</option>
+                    <option value="03">03. Bahan baku</option>
+                    <option value="04">04. Barang jadi</option>
+                    <option value="05">05. Jasa</option>
+                    <option value="06">06. Subcount</option>
+                </select>
+
+                <label>Sub Category</label>
+                <select id="addSubCategory">
+                    <option value="">-- Select Sub Category --</option>
+                </select>
+
+                <label>Code</label>
+                <input type="text" id="addCode" placeholder="Enter code">
+
+                <label>Name</label>
+                <input type="text" id="addName" placeholder="Enter name">
+
+                <div class="form-buttons">
+                    <button type="button" class="save-btn" onclick="saveNewOption()">Save</button>
+                    <button type="button" class="cancel-btn" onclick="closeAddModal()">Cancel</button>
+                </div>
+            </form>
         </div>
-        <div class="form-group">
-          <label for="signUpPassword">Password:</label>
-          <input type="password" id="signUpPassword" required>
-        </div>
-        <button type="submit">Sign Up</button>
-        <p id="signUpError" style="display: none; color: red;"></p>
-      </form>
-      <p>Sudah punya akun? <a href="#" onclick="showLogin()">Login</a></p>
     </div>
 
-    <!-- Main Content -->
-    <div id="mainContent" style="display: none;">
-      <div class="section">
-        <h2 class="section-title">System Part Number Generator</h2>
-        <button onclick="logout()">Logout</button>
-        <!-- Kategori Section -->
-        <div class="form-group">
-          <label for="category">Kategori</label>
-          <select id="category" onchange="updateSubCategories()">
-            <option value="">-- Pilih Kategori --</option>
-          </select>
+    <!-- Loading Spinner -->
+    <div id="loading" class="loading-spinner">Loading...</div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <div class="header">
+            <h1>System Part Number Generator</h1>
         </div>
-        <!-- Sub Kategori Section -->
-        <div class="form-group">
-          <label for="subCategory">Sub Kategori</label>
-          <select id="subCategory" onchange="updateProductNames()" disabled>
-            <option value="">-- Pilih Sub Kategori --</option>
-          </select>
-        </div>
-        <!-- Nama Product Section -->
-        <div class="form-group">
-          <label for="productName">Nama Product</label>
-          <select id="productName" onchange="updateMaterialOptions()" disabled>
-            <option value="">-- Pilih Nama Product --</option>
-          </select>
-        </div>
-        <!-- Bahan/Media Section -->
-        <div class="form-group">
-          <label for="material">Bahan/Media Utama</label>
-          <select id="material" disabled>
-            <option value="">-- Pilih Bahan/Media --</option>
-          </select>
-        </div>
-        <!-- Ukuran Section -->
-        <div class="form-group">
-          <label>Ukuran (mm)</label>
-          <div style="display: flex; gap: 10px;">
-            <input type="number" id="length" placeholder="Panjang" min="1">
-            <input type="number" id="width" placeholder="Lebar" min="1">
-            <input type="number" id="height" placeholder="Tinggi" min="1">
-          </div>
-          <button id="generateSizeCode" style="margin-top: 10px;">Generate Size Code</button>
-          <div class="form-group">
-            <label for="sizeCode">Kode Ukuran</label>
-            <input type="text" id="sizeCode" readonly>
-          </div>
-        </div>
-        <!-- Harga Section -->
-        <div class="form-group">
-          <label for="price">Harga Rp.</label>
-          <input type="text" id="price" placeholder="Contoh: 123412 atau 123.412">
-        </div>
-        <!-- Generate Part Number -->
-        <button id="generatePartNumber">Generate Part Number</button>
-        <!-- Result Section -->
-        <div id="result" class="result" style="display: none;">
-          <div class="form-group">
-            <label for="partNumber">Part Number</label>
-            <input type="text" id="partNumber" readonly>
-            <button id="copyBtn" class="copy-btn">Copy</button>
-          </div>
-          <div class="qr-container">
-            <div id="qr-code"></div>
-            <div style="margin-top: 10px;">
-              <button id="savePng">Save as PNG</button>
-              <button id="saveJpeg">Save as JPEG</button>
-            </div>
-          </div>
-        </div>
-        <!-- Data Table -->
+
+        <!-- Form Section -->
         <div class="section">
-          <h2 class="section-title">Data Part Number</h2>
-          <div class="table-container">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Part Number</th>
-                  <th>Kategori</th>
-                  <th>Sub</th>
-                  <th>Product</th>
-                  <th>Material</th>
-                  <th>Size</th>
-                  <th>Harga</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody id="dataBody"></tbody>
-            </table>
-          </div>
+            <div class="section-title">Kategori</div>
+            <div class="form-group">
+                <label>Kategori</label>
+                <select id="category" onchange="updateSubCategories(); updateMaterials();">
+                    <option value="">-- Pilih Kategori --</option>
+                </select>
+            </div>
+            <div class="form-group dropdown-with-add">
+                <label>Sub Kategori</label>
+                <select id="subCategory" onchange="updateProductNames(); updateMaterials();">
+                    <option value="">-- Pilih Sub Kategori --</option>
+                </select>
+                <button class="add-btn" onclick="openAddModal('subCategory')">+</button>
+            </div>
+            <div class="form-group dropdown-with-add">
+                <label>Nama Product</label>
+                <select id="productName" onchange="toggleCartridgeDimensions();">
+                    <option value="">-- Pilih Nama Product --</option>
+                </select>
+                <button class="add-btn" onclick="openAddModal('productName')">+</button>
+            </div>
+            <div class="form-group header-type" id="headerTypeGroup">
+                <label>Header Type</label>
+                <select id="headerType">
+                    <option value="">-- Select Header Type --</option>
+                    <option value="NH">Non Header</option>
+                    <option value="SH">Single Header</option>
+                    <option value="DH">Double Header</option>
+                </select>
+            </div>
+            <div class="form-group dropdown-with-add">
+                <label>Bahan/Media Utama</label>
+                <select id="material">
+                    <option value="">-- Pilih Bahan/Media --</option>
+                </select>
+                <button class="add-btn" onclick="openAddModal('material')">+</button>
+            </div>
+            <div class="form-group pocket-input" id="pocketInput">
+                <label>Number of Pockets</label>
+                <input type="number" id="pockets" min="1">
+            </div>
         </div>
-      </div>
+
+        <!-- Dimensions Section -->
+        <div class="section">
+            <div class="section-title">Ukuran (mm)</div>
+            <div class="dimensions">
+                <div class="dimension-input">
+                    <label>Panjang</label>
+                    <input type="number" id="length" min="0">
+                </div>
+                <div class="dimension-input">
+                    <label>Lebar</label>
+                    <input type="number" id="width" min="0">
+                </div>
+                <div class="dimension-input">
+                    <label>Tinggi</label>
+                    <input type="number" id="height" min="0">
+                </div>
+            </div>
+            <button class="generate-size-btn" id="generateSizeBtn" onclick="generateSizeCode()">Generate Size Code</button>
+            <div class="form-group">
+                <label>Kode Ukuran</label>
+                <input type="text" id="sizeCode" readonly>
+            </div>
+        </div>
+
+        <!-- Cartridge Dimensions -->
+        <div class="cartridge-dimensions" id="cartridgeDimensions" style="display: none;">
+            <div class="section-title">Dimensi Cartridge (mm)</div>
+            <div class="cartridge-dimension-group">
+                <div class="cartridge-dimension-input">
+                    <label>Top Outer Ø (mm)</label>
+                    <input type="number" id="topOuter" min="0">
+                </div>
+                <div class="cartridge-dimension-input">
+                    <label>Top Inner Ø (mm)</label>
+                    <input type="number" id="topInner" min="0">
+                    <span class="info-icon" title="Optional for some types">i</span>
+                </div>
+            </div>
+            <div class="cartridge-dimension-group">
+                <div class="cartridge-dimension-input">
+                    <label>Bottom Outer Ø (mm)</label>
+                    <input type="number" id="bottomOuter" min="0">
+                </div>
+                <div class="cartridge-dimension-input">
+                    <label>Bottom Inner Ø (mm)</label>
+                    <input type="number" id="bottomInner" min="0">
+                    <span class="info-icon" title="Optional for some types">i</span>
+                </div>
+            </div>
+            <div class="cartridge-dimension-group">
+                <div class="cartridge-dimension-input">
+                    <label>Tinggi (mm)</label>
+                    <input type="number" id="cartridgeHeight" min="0">
+                </div>
+            </div>
+            <div class="cartridge-dimension-group">
+                <div class="cartridge-dimension-input">
+                    <label>Expanded</label>
+                    <select id="expanded">
+                        <option value="SE">Single Expanded</option>
+                        <option value="DE">Double Expanded</option>
+                        <option value="NE">No Expanded</option>
+                    </select>
+                </div>
+                <div class="cartridge-dimension-input">
+                    <label>Gasket</label>
+                    <select id="gasket">
+                        <option value="TG">Top Gasket</option>
+                        <option value="BG">Bottom Gasket</option>
+                        <option value="TBG">Top Bottom Gasket</option>
+                        <option value="NG">No Gasket</option>
+                    </select>
+                </div>
+            </div>
+            <div class="cartridge-dimension-group">
+                <div class="cartridge-dimension-input">
+                    <label>Type Ring Plate</label>
+                    <select id="ringPlateType">
+                        <option value="OTOB">Open Top, Open Bottom</option>
+                        <option value="CTOB">Closed Top, Open Bottom</option>
+                        <option value="CTCB">Closed Top, Closed Bottom</option>
+                        <option value="OTCB">Open Top, Closed Bottom</option>
+                    </select>
+                </div>
+            </div>
+            <button class="generate-size-btn" onclick="generateCartridgeSizeCode()">Generate Size Code</button>
+            <div class="form-group">
+                <label>Kode Ukuran</label>
+                <input type="text" id="cartridgeSizeCode" readonly>
+            </div>
+        </div>
+
+        <!-- Price -->
+        <div class="section">
+            <div class="form-group">
+                <label>Harga Rp.</label>
+                <input type="number" id="price" min="0">
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <div class="generate-section">
+            <button onclick="generatePartNumber()">Generate Part Number</button>
+        </div>
+
+        <!-- Result -->
+        <div class="result" id="result" style="display: none;">
+            <div class="form-group flex-row">
+                <label>Part Number</label>
+                <input type="text" id="partNumber" readonly>
+                <button class="copy-btn" onclick="copyToClipboard('partNumber')">Copy</button>
+            </div>
+            <div class="form-group flex-row">
+                <label>QR Code Data</label>
+                <textarea id="qrData" readonly></textarea>
+                <button class="copy-btn" onclick="copyToClipboard('qrData')">Copy</button>
+            </div>
+            <div class="qr-container">
+                <div id="qr-code"></div>
+                <div class="qr-value" id="qr-text"></div>
+                <div class="save-buttons">
+                    <button class="save-btn" onclick="saveQRCode('png')">Save as PNG</button>
+                    <button class="save-btn" onclick="saveQRCode('jpeg')">Save as JPEG</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Section -->
+        <div class="data-section">
+            <div class="section-title">Data Part Number</div>
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search..." oninput="searchTable()">
+            </div>
+            <div class="category-tabs">
+                <button class="category-tab active" onclick="filterDataTable('all')">Semua</button>
+                <button class="category-tab" onclick="filterDataTable('F1')">Filter</button>
+                <button class="category-tab" onclick="filterDataTable('F2')">Sheetmetal</button>
+                <button class="category-tab" onclick="filterDataTable('F3')">Bahan baku</button>
+                <button class="category-tab" onclick="filterDataTable('F6')">Barang jadi</button>
+                <button class="category-tab" onclick="filterDataTable('F5')">Jasa</button>
+                <button class="category-tab" onclick="filterDataTable('F4')">Subcount</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Part Number</th>
+                            <th>Kategori</th>
+                            <th>Sub Kategori</th>
+                            <th>Produk</th>
+                            <th>Material</th>
+                            <th>Ukuran</th>
+                            <th>Harga</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="9" class="no-data">Belum ada data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <button class="clear-data-btn" onclick="clearAllData()">Clear All Data</button>
+            <button class="export-btn" onclick="exportToExcel()">Export to Excel</button>
+        </div>
     </div>
-  </div>
-  <script src="script.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>
