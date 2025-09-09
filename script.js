@@ -1,9 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-
-// === Konfigurasi Supabase ===
+// === Konfigurasi Supabase (gunakan global supabase dari CDN) ===
 const supabaseUrl = "https://ojskxzgbmgwspmswyony.supabase.co";
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qc2t4emdibWd3c3Btc3d5b255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5Nzc1NDcsImV4cCI6MjA3MjU1MzU0N30.glFY56Wkw-zwTb63reXMl1bifc6QYKLM543Rljt2LH8"; // GANTI DENGAN ANON KEY LENGKAP ANDA!
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = supabase.createClient(supabaseUrl, supabaseKey); // Gunakan global supabase
 
 // === Clock ===
 function updateJakartaClock() {
@@ -16,16 +14,22 @@ function updateJakartaClock() {
 setInterval(updateJakartaClock, 1000);
 updateJakartaClock();
 
-// === Login ===
+// === Login (dengan debug logging) ===
 function validateLogin() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  console.log("validateLogin dipanggil"); // Debug: Pastikan fungsi dipanggil
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  console.log("Username yang dimasukkan:", username); // Debug
+  console.log("Password yang dimasukkan:", password); // Debug
+  console.log("Apakah cocok dengan Farrindo/Farrindo365:", username === "Farrindo" && password === "Farrindo365"); // Debug
   if (username === "Farrindo" && password === "Farrindo365") {
+    console.log("Login berhasil"); // Debug
     document.getElementById("loginModal").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
     loadData();
     loadMasterData();
   } else {
+    console.log("Login gagal"); // Debug
     document.getElementById("loginError").style.display = "block";
   }
   return false;
