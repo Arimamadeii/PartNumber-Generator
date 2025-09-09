@@ -144,3 +144,9 @@ button:disabled {
     margin-top: 10px;
   }
 }
+
+/* Tambahan untuk debug login error */
+#loginError {
+  margin-top: 10px;
+  font-weight: bold;
+}
