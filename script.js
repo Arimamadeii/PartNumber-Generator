@@ -1,7 +1,14 @@
-// === Konfigurasi Supabase (gunakan global supabase dari CDN) ===
+// === Konfigurasi Supabase ===
 const supabaseUrl = "https://ojskxzgbmgwspmswyony.supabase.co";
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qc2t4emdibWd3c3Btc3d5b255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5Nzc1NDcsImV4cCI6MjA3MjU1MzU0N30.glFY56Wkw-zwTb63reXMl1bifc6QYKLM543Rljt2LH8"; // GANTI DENGAN ANON KEY LENGKAP ANDA!
-const supabase = supabase.createClient(supabaseUrl, supabaseKey); // Gunakan global supabase
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qc2t4emdibWd3c3Btc3d5b255Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY5Nzc1NDcsImV4cCI6MjA3MjU1MzU0N30.glFY56Wkw-zwTb63reXMl1bifc6QYKLM543Rljt2LH8"; // GANTI DENGAN ANON KEY ANDA!
+let supabase;
+try {
+  supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  console.log("Supabase client initialized successfully");
+} catch (error) {
+  console.error("Failed to initialize Supabase client:", error);
+  alert("Gagal menginisialisasi Supabase. Periksa URL dan anon key.");
+}
 
 // === Clock ===
 function updateJakartaClock() {
@@ -14,31 +21,122 @@ function updateJakartaClock() {
 setInterval(updateJakartaClock, 1000);
 updateJakartaClock();
 
-// === Login (dengan debug logging) ===
-function validateLogin() {
-  console.log("validateLogin dipanggil"); // Debug: Pastikan fungsi dipanggil
-  const username = document.getElementById("username").value.trim();
-  const password = document.getElementById("password").value.trim();
-  console.log("Username yang dimasukkan:", username); // Debug
-  console.log("Password yang dimasukkan:", password); // Debug
-  console.log("Apakah cocok dengan Farrindo/Farrindo365:", username === "Farrindo" && password === "Farrindo365"); // Debug
-  if (username === "Farrindo" && password === "Farrindo365") {
-    console.log("Login berhasil"); // Debug
+// === Login dengan Supabase Auth ===
+async function validateLogin() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return false;
+  }
+  console.log("validateLogin dipanggil");
+  const email = document.getElementById("loginEmail").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+  console.log("Email yang dimasukkan:", email);
+  console.log("Password yang dimasukkan:", password);
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      console.error("Login error:", error);
+      document.getElementById("loginError").textContent = "Invalid email or password: " + error.message;
+      document.getElementById("loginError").style.display = "block";
+      return false;
+    }
+    console.log("Login berhasil:", data);
     document.getElementById("loginModal").style.display = "none";
     document.getElementById("mainContent").style.display = "block";
     loadData();
     loadMasterData();
-  } else {
-    console.log("Login gagal"); // Debug
+  } catch (error) {
+    console.error("Unexpected login error:", error);
+    document.getElementById("loginError").textContent = "Unexpected error: " + error.message;
     document.getElementById("loginError").style.display = "block";
   }
   return false;
 }
 
+// === Sign Up dengan Supabase Auth ===
+async function signUp() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return false;
+  }
+  const email = document.getElementById("signUpEmail").value.trim();
+  const password = document.getElementById("signUpPassword").value.trim();
+  console.log("SignUp Email:", email);
+  console.log("SignUp Password:", password);
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) {
+      console.error("SignUp error:", error);
+      document.getElementById("signUpError").textContent = "Sign up failed: " + error.message;
+      document.getElementById("signUpError").style.display = "block";
+      return false;
+    }
+    console.log("SignUp berhasil:", data);
+    alert("Pendaftaran berhasil! Silakan login.");
+    showLogin();
+  } catch (error) {
+    console.error("Unexpected signup error:", error);
+    document.getElementById("signUpError").textContent = "Unexpected error: " + error.message;
+    document.getElementById("signUpError").style.display = "block";
+  }
+  return false;
+}
+
+// === Logout ===
+async function logout() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    document.getElementById("mainContent").style.display = "none";
+    document.getElementById("loginModal").style.display = "block";
+    document.getElementById("signUpModal").style.display = "none";
+    document.getElementById("loginEmail").value = "";
+    document.getElementById("loginPassword").value = "";
+    document.getElementById("loginError").style.display = "none";
+  } catch (error) {
+    console.error("Logout error:", error);
+    alert("Gagal logout: " + error.message);
+  }
+}
+
+// === Toggle Login/SignUp Modals ===
+function showSignUp() {
+  document.getElementById("loginModal").style.display = "none";
+  document.getElementById("signUpModal").style.display = "block";
+  document.getElementById("loginError").style.display = "none";
+  document.getElementById("signUpError").style.display = "none";
+}
+
+function showLogin() {
+  document.getElementById("signUpModal").style.display = "none";
+  document.getElementById("loginModal").style.display = "block";
+  document.getElementById("loginError").style.display = "none";
+  document.getElementById("signUpError").style.display = "none";
+}
+
 // === Load Master Data from Supabase ===
 async function loadMasterData() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
   try {
-    // Load Kategori
     const { data: categories, error: catError } = await supabase.from("master_kategori").select("id, kode, nama, prefix");
     if (catError) throw catError;
     const categorySelect = document.getElementById("category");
@@ -54,12 +152,17 @@ async function loadMasterData() {
     });
   } catch (error) {
     console.error("Error loading master data:", error);
-    alert("Gagal memuat data master dari Supabase. Periksa koneksi atau table.");
+    alert("Gagal memuat data master dari Supabase: " + error.message);
   }
 }
 
 // === Dropdown Logic ===
 async function updateSubCategories() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
   const categorySelect = document.getElementById("category");
   const categoryId = categorySelect.options[categorySelect.selectedIndex]?.dataset.id;
   const subSelect = document.getElementById("subCategory");
@@ -89,6 +192,11 @@ async function updateSubCategories() {
 }
 
 async function updateProductNames() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
   const subCategorySelect = document.getElementById("subCategory");
   const subCategoryId = subCategorySelect.options[subCategorySelect.selectedIndex]?.dataset.id;
   const prodSelect = document.getElementById("productName");
@@ -118,22 +226,37 @@ async function updateProductNames() {
 }
 
 async function updateMaterialOptions() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
+  const productSelect = document.getElementById("productName");
+  const productId = productSelect.options[productSelect.selectedIndex]?.dataset.id;
   const materialSelect = document.getElementById("material");
   materialSelect.innerHTML = '<option value="">-- Pilih Bahan/Media --</option>';
-  try {
-    const { data: media, error } = await supabase.from("master_media").select("id, kode, nama");
-    if (error) throw error;
-    media.forEach(m => {
-      const opt = document.createElement("option");
-      opt.value = m.kode;
-      opt.textContent = `${m.kode}. ${m.nama}`;
-      opt.dataset.nama = m.nama;
-      opt.dataset.id = m.id;
-      materialSelect.appendChild(opt);
-    });
-    materialSelect.disabled = false;
-  } catch (error) {
-    console.error("Error fetching materials:", error);
+  if (productId) {
+    try {
+      const { data: media, error } = await supabase
+        .from("master_produk_media")
+        .select("master_media:media_id(id, kode, nama)")
+        .eq("produk_id", productId);
+      if (error) throw error;
+      media.forEach(m => {
+        const opt = document.createElement("option");
+        opt.value = m.master_media.kode;
+        opt.textContent = `${m.master_media.kode}. ${m.master_media.nama}`;
+        opt.dataset.nama = m.master_media.nama;
+        opt.dataset.id = m.master_media.id;
+        materialSelect.appendChild(opt);
+      });
+      materialSelect.disabled = media.length === 0;
+    } catch (error) {
+      console.error("Error fetching materials:", error);
+      alert("Gagal memuat media: " + error.message);
+    }
+  } else {
+    materialSelect.disabled = true;
   }
 }
 
@@ -155,6 +278,11 @@ function generateSizeCode() {
 
 // === Fungsi untuk Mendapatkan Unique Size Code per Product ===
 async function getUniqueSizeCode(productKode, sizeStr) {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return null;
+  }
   try {
     const { data: existing, error: checkError } = await supabase
       .from("product_sizes")
@@ -200,6 +328,11 @@ async function getUniqueSizeCode(productKode, sizeStr) {
 
 // === Generate Part Number ===
 async function generatePartNumber() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
   const categorySelect = document.getElementById("category");
   const subCategorySelect = document.getElementById("subCategory");
   const productSelect = document.getElementById("productName");
@@ -226,7 +359,7 @@ async function generatePartNumber() {
   const catNama = categorySelect.options[categorySelect.selectedIndex].dataset.nama;
   const subNama = subCategorySelect.options[subCategorySelect.selectedIndex].dataset.nama;
   const prodNama = productSelect.options[productSelect.selectedIndex].dataset.nama;
-  const matNama = materialSelect.options[materialSelect.selectedIndex].dataset.nama;
+  const matNama = materialSelect.options[productSelect.selectedIndex].dataset.nama;
 
   const sizeCode = await getUniqueSizeCode(product, size);
   if (!sizeCode) return;
@@ -266,6 +399,11 @@ async function generatePartNumber() {
 
 // === Load Data from Supabase ===
 async function loadData() {
+  if (!supabase) {
+    console.error("Supabase client not initialized");
+    alert("Supabase client belum diinisialisasi. Periksa koneksi.");
+    return;
+  }
   try {
     const { data, error } = await supabase.from("part_numbers").select("*").order("id", { ascending: false });
     if (error) throw error;
